@@ -1,0 +1,70 @@
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; }
+
+.council-app {
+  min-height: 100vh;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 32px 18px 64px;
+}
+.ca-shell { max-width: 660px; margin: 0 auto; }
+
+.ca-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+.ca-title { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.ca-sub { font-size: 13px; color: var(--c-muted); margin-top: 3px; }
+.ca-theme { background: var(--c-surface); color: var(--c-text); border: 1px solid var(--c-border); border-radius: 8px; padding: 7px 13px; font-size: 13px; cursor: pointer; font-weight: 600; }
+
+.ca-roster { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 18px; }
+.ca-chip { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; font-family: ui-monospace, "SF Mono", Menlo, monospace; color: var(--c-muted); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 999px; padding: 4px 11px; }
+.ca-chip-orch { color: var(--c-accent); border-color: var(--c-accent); }
+
+.ca-ask { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 14px; padding: 14px; }
+.ca-input { width: 100%; background: transparent; color: var(--c-text); border: none; resize: vertical; font-size: 16px; font-family: inherit; line-height: 1.5; outline: none; min-height: 56px; }
+.ca-input::placeholder { color: var(--c-muted); }
+.ca-ask-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.ca-status-note { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-muted); }
+.ca-ask-btn { background: var(--c-accent); color: #fff; border: none; border-radius: 9px; padding: 9px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.ca-ask-btn:disabled { opacity: 0.45; cursor: default; }
+.ca-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--c-text); cursor: pointer; }
+.ca-note { font-size: 12px; color: var(--c-muted); margin: 10px 0 0; font-family: ui-monospace, Menlo, monospace; word-break: break-all; }
+
+.ca-conn-toggle, .council-toggle { background: none; border: none; color: var(--c-accent); cursor: pointer; font-size: 13px; font-weight: 600; padding: 4px 0; }
+.ca-conn-toggle:focus-visible, .council-toggle:focus-visible, .ca-ask-btn:focus-visible, .ca-theme:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 3px; border-radius: 6px; }
+
+.ca-error { margin-top: 16px; background: var(--c-surface); border: 1px solid #d96a6a; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #d96a6a; }
+.ca-result { margin-top: 22px; }
+
+.council { color: var(--c-text); font-size: 15px; line-height: 1.55; }
+.council-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; }
+.council-eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-muted); margin-bottom: 8px; font-weight: 600; }
+.council-answer { font-size: 17px; line-height: 1.6; white-space: pre-wrap; }
+.council-meter-row { margin-bottom: 20px; }
+.council-meter-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+.council-meter-label { font-size: 13px; font-weight: 600; }
+.council-meter-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.council-meter-pct { font-size: 13px; color: var(--c-muted); font-weight: 500; }
+.council-meter-track { height: 6px; border-radius: 999px; background: var(--c-surface-alt); overflow: hidden; }
+.council-meter-fill { height: 100%; border-radius: 999px; transition: width 600ms cubic-bezier(.2,.7,.3,1); }
+.council-block { margin-bottom: 16px; }
+.council-block-title { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-muted); margin: 0 0 8px; font-weight: 600; }
+.council-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.council-li { position: relative; font-size: 14px; }
+.council-li-agree { padding-left: 22px; }
+.council-li-agree::before { content: "✓"; position: absolute; left: 0; color: #4ec9a8; font-weight: 700; }
+.council-li-dissent { padding-left: 14px; }
+.council-li-dissent::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 2px; background: #d98a5b; border-radius: 2px; }
+.council-advisor { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-accent); margin-right: 8px; font-family: ui-monospace, Menlo, monospace; }
+.council-verdicts { margin-top: 12px; display: grid; gap: 10px; }
+.council-verdict { background: var(--c-surface-alt); border: 1px solid var(--c-border); border-radius: 10px; padding: 12px 14px; }
+.council-verdict-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.council-verdict-id { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-accent); font-family: ui-monospace, Menlo, monospace; }
+.council-verdict-conf { font-size: 12px; color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.council-verdict-answer { font-size: 14px; margin-bottom: 4px; }
+.council-verdict-rationale { font-size: 13px; color: var(--c-muted); }
+.council-failures { font-size: 13px; color: var(--c-muted); background: var(--c-surface); border: 1px dashed var(--c-border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
+.council-cost { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--c-muted); font-variant-numeric: tabular-nums; border-top: 1px solid var(--c-border); padding-top: 12px; }
+.council-cost-total { color: var(--c-text); font-weight: 600; }
+.council-pulse { color: var(--c-muted); animation: council-fade 1.4s ease-in-out infinite; }
+@keyframes council-fade { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .council-meter-fill { transition: none; } .council-pulse { animation: none; } }

@@ -10,11 +10,19 @@ Roster (edit in `supabase/functions/council/index.ts`):
 | Role | Model |
 |------|-------|
 | Member | Kimi K2.7 Code |
-| Member | Qwen 3.7 Plus |
 | Member | DeepSeek V4 Pro |
-| Member | Gemini 3.1 Flash Lite |
-| Member | GPT-5 Mini |
-| Orchestrator | Grok 4.3 |
+| Member | Gemini 3.1 Pro |
+| Anchor (baseline) | Grok 4.3 |
+| Orchestrator | GPT-5 |
+| Router | GPT-5 Nano |
+
+Six distinct labs, none grading its own lineage: the judge (OpenAI) sees no OpenAI
+member, the anchor (xAI) is independent of the members, and the two frontier models
+sit in deliberating seats (a member and the judge) while the high-frequency anchor
+seat stays moderate and cheap.
+
+The **anchor** answers independently as the baseline the council must beat, and also
+handles queries the router judges "simple" (answered alone, no council).
 
 ## Architecture
 
@@ -62,6 +70,24 @@ npm run dev
 With no `.env`, the app starts in **demo mode** and renders sample data so you can
 see the UI immediately. Set `VITE_COUNCIL_ENDPOINT` to go live; untick "Demo data".
 
+## How the council decides
+
+Each query flows through three mechanisms (tunable in the `CONFIG` block of
+`index.ts`):
+
+1. **Router** — a cheap model (GPT-5 Nano) classifies the query. Simple ones are
+   answered by a single model (DeepSeek V4 Pro) and skip the council entirely,
+   concentrating spend on hard questions.
+2. **Adaptive debate** — after round 1, an objective disagreement score (confidence
+   spread + answer divergence) decides whether members run a second "critique &
+   revise" round. You pay the ~2× for debate only when the council is split.
+3. **Domain-weighted orchestration** — the router's domain tag and each advisor's
+   declared strengths are passed to the orchestrator so it weights the relevant
+   voices rather than counting votes equally.
+
+The response includes `mode` (solo/council), `route`, `disagreement` (objective,
+0-100), `debated`, `rounds`, and a per-stage `cost` breakdown.
+
 ## Cost
 
 Roughly **$0.04 per query** at current OpenRouter prices (five members + orchestrator,
@@ -73,10 +99,12 @@ keep member `max_tokens` low (set in `index.ts`) to bound it.
 
 ## Notes / next steps
 
-- `agreement` is the orchestrator's own judgment, not a computed metric. For an
-  objective number, derive it from the spread of member confidences and answer
-  similarity in `index.ts`.
-- Members run independently (no cross-talk) to preserve diversity. A "debate" round
-  where members see each other roughly doubles cost.
+- `agreement` is the orchestrator's self-report; `disagreement` is the objective
+  metric computed in `index.ts`. Watch both — large gaps between them are a signal
+  the orchestrator is mis-reading the panel.
+- Members run independently in round 1 (no cross-talk) to preserve diversity; the
+  debate round is the only time they see each other, and only when split.
+- Tune `CONFIG.debateThreshold` against your own queries — lower means more debates
+  (higher quality, higher cost).
 - Tighten `Access-Control-Allow-Origin` in `index.ts` from `*` to your domain, and
   set a real `HTTP-Referer`/`X-Title` for OpenRouter's app rankings.

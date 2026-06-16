@@ -21,25 +21,51 @@ export default function CouncilResult({ result, loading = false }) {
   }
   if (!result) return null;
 
-  const { finalAnswer, agreement = 0, consensus = [], dissent = [], verdicts = [], failures = [], cost } = result;
+  const {
+    finalAnswer, agreement = 0, consensus = [], dissent = [], verdicts = [], failures = [], cost,
+    mode, route, disagreement, debated, rounds, anchor,
+  } = result;
   const hue = agreementHue(agreement);
+  const isSolo = mode === "solo";
 
   return (
     <div className="council">
+      {(mode || route) && (
+        <div className="council-meta">
+          {mode && <span className={`council-tag ${isSolo ? "council-tag-solo" : "council-tag-council"}`}>{isSolo ? "solo model" : "full council"}</span>}
+          {route?.domain && <span className="council-tag">{route.domain}</span>}
+          {debated && <span className="council-tag">debated · {rounds} rounds</span>}
+        </div>
+      )}
+
       <div className="council-card">
-        <div className="council-eyebrow">Council verdict</div>
+        <div className="council-eyebrow">{isSolo ? "Answer" : "Council verdict"}</div>
         <div className="council-answer">{finalAnswer}</div>
       </div>
 
-      <div className="council-meter-row">
-        <div className="council-meter-head">
-          <span className="council-meter-label" style={{ color: hue.color }}>{hue.label}</span>
-          <span className="council-meter-value">{agreement}<span className="council-meter-pct">/100</span></span>
+      {!isSolo && (
+        <div className="council-meter-row">
+          <div className="council-meter-head">
+            <span className="council-meter-label" style={{ color: hue.color }}>{hue.label}</span>
+            <span className="council-meter-value">{agreement}<span className="council-meter-pct">/100</span></span>
+          </div>
+          <div className="council-meter-track" role="meter" aria-valuenow={agreement} aria-valuemin={0} aria-valuemax={100} aria-label="Council agreement">
+            <div className="council-meter-fill" style={{ width: `${agreement}%`, background: hue.color }} />
+          </div>
+          {typeof disagreement === "number" && (
+            <div className="council-meter-sub">
+              objective disagreement {disagreement}/100 — {debated ? "triggered a debate round" : "below debate threshold"}
+            </div>
+          )}
         </div>
-        <div className="council-meter-track" role="meter" aria-valuenow={agreement} aria-valuemin={0} aria-valuemax={100} aria-label="Council agreement">
-          <div className="council-meter-fill" style={{ width: `${agreement}%`, background: hue.color }} />
+      )}
+
+      {!isSolo && anchor && (
+        <div className="council-baseline">
+          <span className="council-baseline-tag">anchor baseline · {anchor.id}</span>
+          <span className="council-baseline-text">{anchor.answer}</span>
         </div>
-      </div>
+      )}
 
       {consensus.length > 0 && (
         <div className="council-block">
@@ -91,7 +117,9 @@ export default function CouncilResult({ result, loading = false }) {
 
       {cost && (
         <div className="council-cost">
+          {typeof cost.router === "number" && <span>router ${cost.router.toFixed(4)}</span>}
           <span>members ${cost.members.toFixed(4)}</span>
+          {typeof cost.anchor === "number" && <span>anchor ${cost.anchor.toFixed(4)}</span>}
           <span>orchestrator ${cost.orchestrator.toFixed(4)}</span>
           <span className="council-cost-total">total ${cost.total.toFixed(4)}</span>
         </div>

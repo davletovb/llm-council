@@ -3,8 +3,9 @@ import { DARK, LIGHT, toCssVars } from "./lib/themes";
 import { useCouncil, HAS_ENDPOINT, COUNCIL_ENDPOINT } from "./hooks/useCouncil";
 import CouncilResult from "./components/CouncilResult";
 
-const MEMBERS = ["kimi", "qwen", "deepseek", "gemini", "gpt"];
-const ORCHESTRATOR = "grok";
+const MEMBERS = ["kimi", "deepseek", "gemini 3.1 pro"];
+const ANCHOR = "grok 4.3";
+const ORCHESTRATOR = "gpt-5";
 
 export default function App() {
   const [dark, setDark] = useState(true);
@@ -38,6 +39,7 @@ export default function App() {
 
         <div className="ca-roster">
           {MEMBERS.map((m) => <span key={m} className="ca-chip">{m}</span>)}
+          <span className="ca-chip ca-chip-anchor">{ANCHOR} · anchor</span>
           <span className="ca-chip ca-chip-orch">{ORCHESTRATOR} · orchestrator</span>
         </div>
 

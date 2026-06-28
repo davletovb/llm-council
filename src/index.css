@@ -8,7 +8,7 @@ html, body, #root { margin: 0; height: 100%; }
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   padding: 32px 18px 64px;
 }
-.ca-shell { max-width: 660px; margin: 0 auto; }
+.ca-shell { max-width: 860px; margin: 0 auto; }
 
 .ca-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; gap: 12px; }
 .ca-header-actions { display: flex; gap: 8px; flex-shrink: 0; }

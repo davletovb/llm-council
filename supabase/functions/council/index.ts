@@ -41,6 +41,8 @@ const MEMBERS: ModelCfg[] = [
   { id: "kimi", model: "moonshotai/kimi-k2.7-code", maxTokens: 700, reasoning: "low", tags: ["coding"] },
   { id: "deepseek", model: "deepseek/deepseek-v4-pro", maxTokens: 700, reasoning: "low", tags: ["reasoning", "coding"] },
   { id: "gemini", model: "google/gemini-3.1-pro-preview", maxTokens: 700, reasoning: "low", tags: ["general", "reasoning", "multimodal"] },
+  // GLM 5.2 (Z.ai) reasons at high/xhigh by default — the maxTokens cap is the real cost control here.
+  { id: "glm", model: "z-ai/glm-5.2", maxTokens: 700, reasoning: "low", tags: ["coding", "reasoning"] },
 ];
 
 // Frontier judge. Runs once per complex query, so frontier spend is justified here.
@@ -60,6 +62,7 @@ const PRICES: Record<string, [number, number]> = {
   "moonshotai/kimi-k2.7-code": [0.75, 3.5],
   "deepseek/deepseek-v4-pro": [0.435, 0.87],
   "google/gemini-3.1-pro-preview": [2.0, 12.0],
+  "z-ai/glm-5.2": [0.95, 3.0],
   "x-ai/grok-4.3": [1.25, 2.5],
   "openai/gpt-5": [1.25, 10.0],
   "openai/gpt-5-nano": [0.05, 0.4],

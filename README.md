@@ -12,6 +12,7 @@ Roster (edit in `supabase/functions/council/index.ts`):
 | Member | Kimi K2.7 Code |
 | Member | DeepSeek V4 Pro |
 | Member | Gemini 3.1 Pro |
+| Member | GLM 5.2 |
 | Anchor (baseline) | Grok 4.3 |
 | Orchestrator | GPT-5 |
 | Router | GPT-5 Nano |
@@ -40,6 +41,7 @@ sees it — it just calls the function.
 ```
 supabase/functions/council/index.ts   the council: fan-out + orchestration (Deno)
 src/hooks/useCouncil.js                fetch wrapper: loading / error / result state
+src/hooks/useHistory.js                local history of runs (browser localStorage)
 src/components/CouncilResult.jsx       renders the structured verdict
 src/lib/themes.js                      dark/light tokens -> CSS variables
 src/lib/demoData.js                    sample result for demo mode
@@ -96,6 +98,13 @@ from OpenRouter's token usage, so you can watch actual spend.
 
 The orchestrator is the largest single line because it ingests every member's output —
 keep member `max_tokens` low (set in `index.ts`) to bound it.
+
+## History
+
+Every successful run is saved locally to `localStorage` (key `council:history`,
+capped at 50 entries) — no database, no network. Open the **History** panel in the
+header to re-open a past result or delete entries. History is per-browser and clears
+if you clear site data; it won't sync across devices (that would need a backend).
 
 ## Notes / next steps
 

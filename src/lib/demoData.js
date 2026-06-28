@@ -27,6 +27,7 @@ export const DEMO_RESULT = {
     { id: "kimi", answer: "MongoDB — schema flexibility for evolving message types", confidence: 61, rationale: "Early message shapes change often; document model avoids migrations." },
     { id: "deepseek", answer: "Postgres", confidence: 80, rationale: "JSONB covers flexible payloads without giving up transactions." },
     { id: "gemini", answer: "Postgres, with Redis for presence and fan-out", confidence: 86, rationale: "Pair durable relational storage with an in-memory layer for real-time." },
+    { id: "glm", answer: "Postgres; model messages with JSONB and add a pub/sub channel", confidence: 79, rationale: "Relational core plus flexible payloads handles evolving message shapes." },
   ],
   failures: [],
   cost: { router: 0.0001, members: 0.0131, anchor: 0.0029, orchestrator: 0.0156, total: 0.0317, currency: "USD" },

@@ -26,7 +26,7 @@ export function useCouncil() {
       if (demo || !ENDPOINT) {
         await new Promise((r) => setTimeout(r, 1100)); // simulate latency
         setResult(DEMO_RESULT);
-        return;
+        return DEMO_RESULT;
       }
 
       const res = await fetch(ENDPOINT, {
@@ -46,11 +46,20 @@ export function useCouncil() {
       const data = await res.json();
       if (data?.error) throw new Error(data.error);
       setResult(data);
+      return data;
     } catch (e) {
       setError(String(e?.message || e));
+      return null;
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Display a result we already have (e.g. one selected from history).
+  const show = useCallback((r) => {
+    setResult(r);
+    setError(null);
+    setLoading(false);
   }, []);
 
   const reset = useCallback(() => {
@@ -58,5 +67,5 @@ export function useCouncil() {
     setError(null);
   }, []);
 
-  return { ask, reset, loading, error, result };
+  return { ask, reset, show, loading, error, result };
 }

@@ -38,11 +38,11 @@ type ModelCfg = {
 };
 
 const MEMBERS: ModelCfg[] = [
-  { id: "kimi", model: "moonshotai/kimi-k2.7-code", maxTokens: 700, reasoning: "low", tags: ["coding"] },
-  { id: "deepseek", model: "deepseek/deepseek-v4-pro", maxTokens: 700, reasoning: "low", tags: ["reasoning", "coding"] },
-  { id: "gemini", model: "google/gemini-3.1-pro-preview", maxTokens: 700, reasoning: "low", tags: ["general", "reasoning", "multimodal"] },
+  { id: "kimi", model: "moonshotai/kimi-k2.7-code", maxTokens: 1100, reasoning: "low", tags: ["coding"] },
+  { id: "deepseek", model: "deepseek/deepseek-v4-pro", maxTokens: 1100, reasoning: "low", tags: ["reasoning", "coding"] },
+  { id: "gemini", model: "google/gemini-3.1-pro-preview", maxTokens: 1100, reasoning: "low", tags: ["general", "reasoning", "multimodal"] },
   // GLM 5.2 (Z.ai) reasons at high/xhigh by default — the maxTokens cap is the real cost control here.
-  { id: "glm", model: "z-ai/glm-5.2", maxTokens: 700, reasoning: "low", tags: ["coding", "reasoning"] },
+  { id: "glm", model: "z-ai/glm-5.2", maxTokens: 1100, reasoning: "low", tags: ["coding", "reasoning"] },
 ];
 
 // Frontier judge. Runs once per complex query, so frontier spend is justified here.
@@ -136,6 +136,9 @@ async function callModel(apiKey: string, cfg: ModelCfg, system: string, user: st
       ],
     };
     if (cfg.reasoning) body.reasoning = { effort: cfg.reasoning };
+    // Ask providers to emit a JSON object directly — every call in this app expects JSON.
+    // Providers that don't support it ignore it; the parser below still handles stragglers.
+    body.response_format = { type: "json_object" };
 
     const res = await fetch(OPENROUTER_URL, {
       method: "POST",
@@ -172,10 +175,32 @@ function costOf(model: string, usage: Usage): number {
 
 // --- Defensive JSON parsing -------------------------------------------------
 function extractJson(raw: string): string {
-  const cleaned = raw.replace(/```json|```/g, "").trim();
+  // Drop chain-of-thought wrappers some thinking models inline in `content`.
+  const noThink = raw.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, "");
+  const cleaned = noThink.replace(/```json|```/g, "").trim();
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
   return start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned;
+}
+
+// Pull a single field out of text even when the surrounding JSON is malformed
+// (unescaped newlines inside strings, a truncated/missing closing brace, etc.).
+function matchField(s: string, key: string): string | null {
+  const str = s.match(new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`));
+  if (str) {
+    return str[1]
+      .replace(/\\n/g, "\n")
+      .replace(/\\t/g, "\t")
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, "\\")
+      .trim();
+  }
+  const num = s.match(new RegExp(`"${key}"\\s*:\\s*([0-9]+)`));
+  return num ? num[1] : null;
+}
+
+function stripThink(raw: string): string {
+  return raw.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, "").trim();
 }
 
 function clampInt(v: unknown, lo: number, hi: number, fallback: number): number {
@@ -185,16 +210,29 @@ function clampInt(v: unknown, lo: number, hi: number, fallback: number): number 
 }
 
 function parseVerdict(raw: string): Verdict {
+  const json = extractJson(raw);
+  // 1) clean parse
   try {
-    const obj = JSON.parse(extractJson(raw));
-    return {
-      answer: String(obj.answer ?? "").trim(),
-      confidence: clampInt(obj.confidence, 0, 100, 50),
-      rationale: String(obj.rationale ?? "").trim(),
-    };
+    const obj = JSON.parse(json);
+    const answer = String(obj.answer ?? "").trim();
+    if (answer) {
+      return { answer, confidence: clampInt(obj.confidence, 0, 100, 50), rationale: String(obj.rationale ?? "").trim() };
+    }
   } catch {
-    return { answer: raw.trim(), confidence: 50, rationale: "(unstructured response)" };
+    /* fall through to salvage */
   }
+  // 2) salvage individual fields from malformed/truncated JSON
+  const answer = matchField(json, "answer") ?? matchField(raw, "answer");
+  if (answer) {
+    return {
+      answer,
+      confidence: clampInt(matchField(json, "confidence") ?? matchField(raw, "confidence"), 0, 100, 50),
+      rationale: matchField(json, "rationale") ?? matchField(raw, "rationale") ?? "",
+    };
+  }
+  // 3) no recoverable structure — use the model's prose as the answer (better than a placeholder)
+  const prose = stripThink(raw);
+  return { answer: prose || raw.trim(), confidence: 50, rationale: "" };
 }
 
 function parseRoute(raw: string): Route {

@@ -78,7 +78,7 @@ Each query flows through three mechanisms (tunable in the `CONFIG` block of
 `index.ts`):
 
 1. **Router** — a cheap model (GPT-5 Nano) classifies the query. Simple ones are
-   answered by a single model (DeepSeek V4 Pro) and skip the council entirely,
+   answered by a single model (Grok 4.3) and skip the council entirely,
    concentrating spend on hard questions.
 2. **Adaptive debate** — after round 1, an objective disagreement score (confidence
    spread + answer divergence) decides whether members run a second "critique &

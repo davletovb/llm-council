@@ -4,7 +4,7 @@ import { useCouncil, HAS_ENDPOINT, COUNCIL_ENDPOINT } from "./hooks/useCouncil";
 import { useHistory } from "./hooks/useHistory";
 import CouncilResult from "./components/CouncilResult";
 
-const MEMBERS = ["kimi", "deepseek", "gemini 3.1 pro", "glm 5.2"];
+const MEMBERS = ["kimi k2.7", "deepseek v4 pro", "gemini 3.1 pro", "glm 5.2"];
 const ANCHOR = "grok 4.3";
 const ORCHESTRATOR = "gpt-5";
 
@@ -48,7 +48,7 @@ export default function App() {
         <header className="ca-header">
           <div>
             <div className="ca-title">LLM Council</div>
-            <div className="ca-sub">Three advisors deliberate · an anchor sets the baseline · one orchestrator decides</div>
+            <div className="ca-sub">Four advisors deliberate · an anchor sets the baseline · one orchestrator decides</div>
           </div>
           <div className="ca-header-actions">
             <button className="ca-theme" onClick={() => setShowHistory((s) => !s)} aria-pressed={showHistory}>

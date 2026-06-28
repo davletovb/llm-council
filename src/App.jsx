@@ -4,7 +4,7 @@ import { useCouncil, HAS_ENDPOINT, COUNCIL_ENDPOINT } from "./hooks/useCouncil";
 import { useHistory } from "./hooks/useHistory";
 import CouncilResult from "./components/CouncilResult";
 
-const MEMBERS = ["kimi k2.7 code", "deepseek v4 pro", "gemini 3.1 pro", "glm 5.2"];
+const MEMBERS = ["kimi", "deepseek", "gemini 3.1 pro", "glm 5.2"];
 const ANCHOR = "grok 4.3";
 const ORCHESTRATOR = "gpt-5";
 

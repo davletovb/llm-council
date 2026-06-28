@@ -47,7 +47,7 @@ const MEMBERS: ModelCfg[] = [
 
 // Frontier judge. Runs once per complex query, so frontier spend is justified here.
 // A/B note: swap to { id: "grok", model: "x-ai/grok-4.3", ... } for the cheaper judge.
-const ORCHESTRATOR: ModelCfg = { id: "gpt5", model: "openai/gpt-5", maxTokens: 1200, reasoning: "low" };
+const ORCHESTRATOR: ModelCfg = { id: "gpt5", model: "openai/gpt-5", maxTokens: 1800, reasoning: "low" };
 
 // Cheap, fast model used only to classify the query.
 const ROUTER: ModelCfg = { id: "router", model: "openai/gpt-5-nano", maxTokens: 120, reasoning: "low" };
@@ -136,11 +136,11 @@ async function callModel(apiKey: string, cfg: ModelCfg, system: string, user: st
       ],
     };
     if (cfg.reasoning) body.reasoning = { effort: cfg.reasoning };
-    // Ask providers to emit a JSON object directly — every call in this app expects JSON.
-    // Providers that don't support it ignore it; the parser below still handles stragglers.
+    // Ask providers to emit a JSON object directly. Some providers reject this param —
+    // if the request fails, we retry once without it (and the parser handles stragglers).
     body.response_format = { type: "json_object" };
 
-    const res = await fetch(OPENROUTER_URL, {
+    let res = await fetch(OPENROUTER_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -151,6 +151,21 @@ async function callModel(apiKey: string, cfg: ModelCfg, system: string, user: st
       body: JSON.stringify(body),
       signal: controller.signal,
     });
+
+    if (!res.ok && body.response_format) {
+      delete body.response_format;
+      res = await fetch(OPENROUTER_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://your-app.example",
+          "X-Title": "LLM Council",
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    }
 
     if (!res.ok) {
       const text = await res.text();
@@ -203,6 +218,16 @@ function stripThink(raw: string): string {
   return raw.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, "").trim();
 }
 
+// Pull quoted strings out of a "key": [ ... ] array even when the JSON is malformed.
+function salvageStringArray(s: string, key: string): string[] {
+  const block = s.match(new RegExp(`"${key}"\\s*:\\s*\\[([\\s\\S]*?)\\]`));
+  if (!block) return [];
+  const items = block[1].match(/"((?:[^"\\]|\\.)*)"/g);
+  return items
+    ? items.map((x) => x.slice(1, -1).replace(/\\"/g, '"').replace(/\\n/g, "\n").trim()).filter(Boolean)
+    : [];
+}
+
 function clampInt(v: unknown, lo: number, hi: number, fallback: number): number {
   const n = Math.round(Number(v));
   if (Number.isNaN(n)) return fallback;
@@ -247,22 +272,40 @@ function parseRoute(raw: string): Route {
 }
 
 function parseOrchestration(raw: string): Orchestration {
+  const json = extractJson(raw);
+  // 1) clean parse
   try {
-    const obj = JSON.parse(extractJson(raw));
-    return {
-      finalAnswer: String(obj.finalAnswer ?? "").trim(),
-      agreement: clampInt(obj.agreement, 0, 100, 50),
-      consensus: Array.isArray(obj.consensus) ? obj.consensus.map((x: unknown) => String(x).trim()) : [],
-      dissent: Array.isArray(obj.dissent)
-        ? obj.dissent.map((d: { advisor?: unknown; point?: unknown }) => ({
-            advisor: String(d?.advisor ?? "").trim(),
-            point: String(d?.point ?? "").trim(),
-          }))
-        : [],
-    };
+    const obj = JSON.parse(json);
+    const finalAnswer = String(obj.finalAnswer ?? "").trim();
+    if (finalAnswer) {
+      return {
+        finalAnswer,
+        agreement: clampInt(obj.agreement, 0, 100, 50),
+        consensus: Array.isArray(obj.consensus) ? obj.consensus.map((x: unknown) => String(x).trim()) : [],
+        dissent: Array.isArray(obj.dissent)
+          ? obj.dissent.map((d: { advisor?: unknown; point?: unknown }) => ({
+              advisor: String(d?.advisor ?? "").trim(),
+              point: String(d?.point ?? "").trim(),
+            }))
+          : [],
+      };
+    }
   } catch {
-    return { finalAnswer: raw.trim(), agreement: 50, consensus: [], dissent: [] };
+    /* fall through to salvage */
   }
+  // 2) salvage from malformed/truncated JSON (literal newlines in finalAnswer, missing close brace)
+  const finalAnswer = matchField(json, "finalAnswer") ?? matchField(raw, "finalAnswer");
+  if (finalAnswer) {
+    return {
+      finalAnswer,
+      agreement: clampInt(matchField(json, "agreement") ?? matchField(raw, "agreement"), 0, 100, 50),
+      consensus: salvageStringArray(json, "consensus"),
+      dissent: [],
+    };
+  }
+  // 3) no recoverable structure — show prose, never the raw JSON braces
+  const prose = stripThink(raw).replace(/^\s*\{[\s\S]*$/, "").trim();
+  return { finalAnswer: prose || stripThink(raw) || raw.trim(), agreement: 50, consensus: [], dissent: [] };
 }
 
 // --- Member rounds (round 1 and debate share this) --------------------------
